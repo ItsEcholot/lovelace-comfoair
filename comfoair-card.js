@@ -13,11 +13,31 @@ class ComfoAirCard extends LitElement {
     };
   }
 
+  showMoreInfo() {
+    this.hass.callService("browser_mod", "more_info", {
+      entity_id: 'climate.comfoair_350_luxe'
+    });
+  }
+  
+  switchExhaust() {
+    this.hass.callService("esphome", "esphome_comfoair_climate_set_operation_mode", {
+      exhaust_fan: !(parseInt(this.hass.states['sensor.fan_exhaust_air'].state) > 0),
+      supply_fan: (parseInt(this.hass.states['sensor.fan_supply_air'].state) > 0)
+    });
+  }
+  
+  switchSupply() {
+    this.hass.callService("esphome", "esphome_comfoair_climate_set_operation_mode", {
+      exhaust_fan: (parseInt(this.hass.states['sensor.fan_exhaust_air'].state) > 0),
+      supply_fan: !(parseInt(this.hass.states['sensor.fan_supply_air'].state) > 0)
+    });
+  }
+
   render() {
     return html`
     <ha-card>
     <div class="container">
-      <div class="bg">
+      <div class="bg" @click=${this.showMoreInfo}>
           <div class="flex-container">
               <div class="flex-col-out">
                   <div>${this.hass.states['sensor.outside_air'].state}°C</div>
@@ -39,22 +59,30 @@ class ComfoAirCard extends LitElement {
       </div>
       </div>
       <div class="info-row">
-      ${this.getFanTmpl()}
-      ${this.getAirFilterTmpl()}
+      <span @click=${this.switchExhaust}>${this.getExhaustModeTmpl()}</span>
+      <span @click=${this.switchSupply}>${this.getSupplyModeTmpl()}</span>
       ${this.getBypassTmpl()}
-      ${this.getPreHeatTmpl()}
+      ${this.getAirFilterTmpl()}
       ${this.getSummerModeTmpl()}
       </div>
     </ha-card>  
     `;
   }
-
-  getFanTmpl(){
-    if(this.hass.states['binary_sensor.supply_fan'].state == 'on'){
-      return html`<ha-icon icon="mdi:fan"></ha-icon>`;
-    }else{
-      return html`<ha-icon class="inactive" icon="mdi:fan"></ha-icon>`;
-    }
+  
+  getExhaustModeTmpl(){
+      if(parseInt(this.hass.states['sensor.fan_exhaust_air'].state) > 0) {
+          return html`<ha-icon class="mouse-over" icon="mdi:home-export-outline"></ha-icon>`;
+      } else {
+          return html`<ha-icon class="mouse-over inactive" icon="mdi:home-export-outline"></ha-icon>`;
+      }
+  }
+  
+  getSupplyModeTmpl(){
+      if(parseInt(this.hass.states['sensor.fan_supply_air'].state) > 0) {
+          return html`<ha-icon class="mouse-over" icon="mdi:home-import-outline"></ha-icon>`;
+      } else {
+          return html`<ha-icon class="mouse-over inactive" icon="mdi:home-import-outline"></ha-icon>`;
+      }
   }
 
   getAirFilterTmpl(){
@@ -85,7 +113,7 @@ class ComfoAirCard extends LitElement {
     if(this.hass.states['binary_sensor.summer_mode'].state == 'off'){
       return html`<ha-icon icon="mdi:snowflake"></ha-icon>`;
     }else{
-      return html`<ha-icon class="inactive" icon="mdi:weather-sunny"></ha-icon>`;
+      return html`<ha-icon icon="mdi:weather-sunny"></ha-icon>`;
     }
   }
 
@@ -142,7 +170,7 @@ class ComfoAirCard extends LitElement {
       justify-content: space-between;
     }
     .fan-state {
-      padding-top: 15px;
+      padding-top: 40px;
     }
     .spin {
       animation-name: spin;
@@ -164,7 +192,11 @@ class ComfoAirCard extends LitElement {
     }
 
     .inactive {
-      opacity: 0.7;
+      opacity: 0.2;
+    }
+    
+    .mouse-over {
+        cursor: pointer;
     }
 
     .warning {
